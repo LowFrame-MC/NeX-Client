@@ -5,6 +5,7 @@ APP_NAME="NeX Client"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="/mnt/c/NeXClient-Dist"
 MODE="${1:-all}"
+MIN_NODE_MAJOR=22
 
 log() {
   printf '[nex-build] %s\n' "$*"
@@ -37,9 +38,41 @@ install_wine() {
   install_apt_package wine64
 }
 
+current_node_major() {
+  if ! need_command node; then
+    printf '0'
+    return
+  fi
+
+  node -p "Number(process.versions.node.split('.')[0])" 2>/dev/null || printf '0'
+}
+
+install_node_runtime() {
+  local node_major
+  node_major="$(current_node_major)"
+
+  if [[ "$node_major" -ge "$MIN_NODE_MAJOR" ]] && need_command npm; then
+    log "Using Node $(node --version) and npm $(npm --version)"
+    return
+  fi
+
+  log "Installing Node.js ${MIN_NODE_MAJOR}.x for Electron Builder"
+  curl -fsSL "https://deb.nodesource.com/setup_${MIN_NODE_MAJOR}.x" | sudo -E bash -
+  sudo apt-get install -y nodejs
+  hash -r
+
+  node_major="$(current_node_major)"
+  if [[ "$node_major" -lt "$MIN_NODE_MAJOR" ]] || ! need_command npm; then
+    log "Node.js ${MIN_NODE_MAJOR}.x installation failed. Current node: $(node --version 2>/dev/null || echo missing)"
+    exit 1
+  fi
+
+  log "Using Node $(node --version) and npm $(npm --version)"
+}
+
 install_system_dependencies() {
   log "Checking system packages"
-  if ! sudo -n true >/dev/null 2>&1; then
+  if ! sudo -v; then
     log "This script needs sudo to install Linux packaging tools in WSL."
     log "Run it from an Ubuntu/WSL terminal so you can enter your password:"
     log "  cd \"$PROJECT_ROOT\" && bash build-scripts/package-wsl.sh ${MODE}"
@@ -49,6 +82,7 @@ install_system_dependencies() {
   sudo apt-get update
   install_apt_package curl
   install_apt_package ca-certificates
+  install_node_runtime
   install_apt_package rpm
   install_apt_package fakeroot
   install_apt_package dpkg
@@ -66,7 +100,7 @@ install_node_dependencies() {
   cd "$PROJECT_ROOT"
 
   if ! need_command npm; then
-    log "npm is missing. Install Node.js 20+ in WSL before running this script."
+    log "npm is missing. Install Node.js ${MIN_NODE_MAJOR}+ in WSL before running this script."
     exit 1
   fi
 
