@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "profile": "default",
+  "updatedAt": null,
+  "launcher": {
+    "gameDirectory": "",
+    "javaPath": "",
+    "memory": {
+      "min": "1G",
+      "max": "4G"
+    },
+    "window": {
+      "width": 1280,
+      "height": 720
+    },
+    "extraJvmArgs": [],
+    "loader": "fabric"
+  },
+  "versions": {
+    "1.8.9": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.12.2": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.16.5": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.18.2": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.19.2": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.20.1": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.20.4": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.20.6": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.21": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    },
+    "1.21.11": {
+      "modules": {
+        "keystrokes": false,
+        "fullbright": false,
+        "cps_counter": false,
+        "fps_boost": false,
+        "armor_status": false
+      }
+    }
+  }
+}

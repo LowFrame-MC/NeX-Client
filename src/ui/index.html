@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://crafatar.com https://cdn.modrinth.com https://media.forgecdn.net https://static.planetminecraft.com https://www.planetminecraft.com data:; style-src 'self'; script-src 'self'; connect-src 'self';">
+  <title>NeX Client</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">NEX</div>
+        <div class="brand-subtitle">CLIENT</div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-tab-target="dashboard">
+          <span class="nav-symbol">⌂</span>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" data-tab-target="settings">
+          <span class="nav-symbol">⚙</span>
+          <span>Settings</span>
+        </button>
+        <button class="nav-item" data-tab-target="marketplace">
+          <span class="nav-symbol">◈</span>
+          <span>Mods</span>
+        </button>
+        <button class="nav-item" data-tab-target="resourcepacks">
+          <span class="nav-symbol">▣</span>
+          <span>Resource Packs</span>
+        </button>
+        <button class="nav-item" data-tab-target="modules">
+          <span class="nav-symbol">✚</span>
+          <span>Client Modules</span>
+        </button>
+      </nav>
+
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div class="profile-copy">
+          <strong id="profileName">Signed out</strong>
+          <span id="profileMeta">Microsoft account required</span>
+        </div>
+        <button class="btn compact primary" id="loginButton">Login</button>
+        <button class="btn compact ghost hidden" id="logoutButton">Logout</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>NEX CLIENT</span>
+        <strong id="appVersion">v1.0.0</strong>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="window-bar">
+        <div id="titlebarStatus">Ready</div>
+        <div class="window-actions">
+          <button id="windowMinimize" aria-label="Minimize">−</button>
+          <button id="windowClose" aria-label="Close">×</button>
+          <button id="windowMaximize" class="hidden" aria-label="Maximize"></button>
+        </div>
+      </header>
+
+      <section class="tab-panel active home-panel" id="dashboard" aria-label="Home">
+        <div class="home-hero">
+          <div class="hero-copy">
+            <h1>Welcome to Nex Client</h1>
+            <p>Your all-in-one Minecraft enhancement platform.</p>
+          </div>
+
+          <div class="nex-wordmark">NEX</div>
+
+          <div class="launcher-controls">
+            <label class="select-card">
+              <span>Choose Version</span>
+              <select id="versionSelect"></select>
+            </label>
+            <label class="select-card">
+              <span>Choose Mod Loader</span>
+              <select id="loaderSelect">
+                <option value="fabric">Fabric</option>
+                <option value="forge">Forge</option>
+                <option value="any">Any</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="launch-button" id="launchButton">
+            <span>▶</span>
+            Launch Game
+          </button>
+          <div class="launch-note" id="launchNote">No game process is running.</div>
+          <button class="link-button" id="previewButton">Preview Launch Command</button>
+        </div>
+
+        <section class="minecraft-console" aria-label="Minecraft console">
+          <div class="panel-heading">
+            <h2>Minecraft Console</h2>
+            <button class="small-square" id="clearConsoleButton">Clear</button>
+          </div>
+          <pre id="minecraftConsoleOutput">Waiting for launch...</pre>
+        </section>
+
+        <section class="command-panel hidden" id="commandPanel">
+          <div class="panel-heading">
+            <h2>Launch Command</h2>
+            <button class="small-square" id="copyCommandButton">Copy</button>
+          </div>
+          <pre id="commandOutput"></pre>
+        </section>
+      </section>
+
+      <section class="tab-panel settings-panel" id="settings" aria-label="Settings">
+        <div class="page-title">
+          <span class="page-icon">⚙</span>
+          <div>
+            <h1>Settings</h1>
+          </div>
+        </div>
+
+        <div class="settings-stack">
+          <section class="settings-box">
+            <h2>General</h2>
+            <div class="setting-row">
+              <label>Minecraft Directory</label>
+              <input id="gameDirectoryInput" type="text" placeholder="Auto-detect .minecraft">
+              <button class="btn ghost">Browse</button>
+            </div>
+            <div class="setting-row short">
+              <label>Language</label>
+              <select>
+                <option>English</option>
+              </select>
+            </div>
+            <div class="setting-row short">
+              <label>Theme</label>
+              <select>
+                <option>Dark Purple</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Start Nex Client when my computer starts</label>
+              <label class="switch">
+                <input type="checkbox">
+                <span></span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-box">
+            <h2>Performance</h2>
+            <div class="setting-row">
+              <label>Memory Allocation</label>
+              <select id="memorySelect">
+                <option value="2G">2048 MB</option>
+                <option value="4G" selected>4096 MB</option>
+                <option value="6G">6144 MB</option>
+                <option value="8G">8192 MB</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Automatically Close Launcher After Launch</label>
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span></span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-box">
+            <h2>Runtime</h2>
+            <div class="setting-row">
+              <label>Java Path</label>
+              <input id="javaPathInput" type="text" placeholder="Auto-detect Java">
+            </div>
+            <div class="setting-row split">
+              <label>Window Size</label>
+              <input id="windowWidthInput" type="number" min="854" value="1280">
+              <input id="windowHeightInput" type="number" min="480" value="720">
+              <button class="btn primary" id="saveSettingsButton">Save</button>
+            </div>
+          </section>
+
+          <section class="settings-box">
+            <h2>Other</h2>
+            <div class="setting-row">
+              <label>Check for Updates</label>
+              <button class="btn primary">Check Now</button>
+            </div>
+            <div class="setting-row">
+              <label>Config Path</label>
+              <strong id="configPath">Resolving</strong>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel mods-panel" id="marketplace" aria-label="Mods">
+        <div class="page-title">
+          <span class="page-icon">◈</span>
+          <div>
+            <h1>Mods</h1>
+          </div>
+        </div>
+
+        <div class="mods-box">
+          <div class="source-tabs">
+            <button class="source-tab active" data-source-tab="modrinth">◎ Modrinth</button>
+            <button class="source-tab" data-source-tab="curseforge">▸ CurseForge</button>
+            <button class="source-tab" data-source-tab="planetminecraft">◆ Planet Minecraft</button>
+          </div>
+          <div class="market-toolbar">
+            <input id="modSearchInput" type="search" placeholder="Search mods...">
+            <select>
+              <option>Sort by: Relevance</option>
+              <option>Sort by: Downloads</option>
+            </select>
+            <button class="small-square" id="searchModsButton">↻</button>
+            <select id="modSourceSelect" class="hidden">
+              <option value="modrinth">Modrinth</option>
+              <option value="curseforge">CurseForge</option>
+              <option value="planetminecraft">Planet Minecraft</option>
+            </select>
+          </div>
+
+          <div class="progress-card hidden" id="downloadProgressCard">
+            <div>
+              <strong id="downloadFileName">Downloading</strong>
+              <span id="downloadProgressText">0%</span>
+            </div>
+            <progress id="downloadProgress" max="100" value="0"></progress>
+          </div>
+
+          <div class="mod-list" id="modGrid">
+            <div class="empty-state">
+              <strong>Loading featured mods...</strong>
+              <span>NeX is opening the marketplace front page.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel resourcepacks-panel" id="resourcepacks" aria-label="Resource Packs">
+        <div class="page-title">
+          <span class="page-icon">▣</span>
+          <div>
+            <h1>Resource Packs</h1>
+            <p>Browse the front pages and install packs into your Minecraft resourcepacks folder.</p>
+          </div>
+        </div>
+
+        <div class="mods-box">
+          <div class="source-tabs">
+            <button class="source-tab active" data-resource-source-tab="modrinth">◎ Modrinth</button>
+            <button class="source-tab" data-resource-source-tab="curseforge">▸ CurseForge</button>
+            <button class="source-tab" data-resource-source-tab="planetminecraft">◆ Planet Minecraft</button>
+          </div>
+          <div class="market-toolbar">
+            <input id="resourcePackSearchInput" type="search" placeholder="Search resource packs...">
+            <select>
+              <option>Sort by: Relevance</option>
+              <option>Sort by: Downloads</option>
+            </select>
+            <button class="small-square" id="searchResourcePacksButton">↻</button>
+            <select id="resourcePackSourceSelect" class="hidden">
+              <option value="modrinth">Modrinth</option>
+              <option value="curseforge">CurseForge</option>
+              <option value="planetminecraft">Planet Minecraft</option>
+            </select>
+          </div>
+
+          <div class="progress-card hidden" id="resourcePackDownloadProgressCard">
+            <div>
+              <strong id="resourcePackDownloadFileName">Downloading</strong>
+              <span id="resourcePackDownloadProgressText">0%</span>
+            </div>
+            <progress id="resourcePackDownloadProgress" max="100" value="0"></progress>
+          </div>
+
+          <div class="mod-list" id="resourcePackGrid">
+            <div class="empty-state">
+              <strong>Loading featured resource packs...</strong>
+              <span>NeX is opening the marketplace front page.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel modules-panel" id="modules" aria-label="Client Modules">
+        <div class="page-title">
+          <span class="page-icon">✚</span>
+          <div>
+            <h1>Client Modules</h1>
+            <p>Enable and customize built-in client modules.</p>
+          </div>
+        </div>
+
+        <div class="module-list" id="moduleGrid">
+          <article class="module-row" data-module="keystrokes">
+            <span class="module-icon">⌨</span>
+            <div>
+              <h2>Keystrokes</h2>
+              <p>Saves overlay state for a compatible NeX runtime mod.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="keystrokes">
+              <span></span>
+            </label>
+            <button class="small-square">⚙</button>
+          </article>
+          <article class="module-row" data-module="fullbright">
+            <span class="module-icon sun">☀</span>
+            <div>
+              <h2>Fullbright</h2>
+              <p>Applies a gamma override before Minecraft starts.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="fullbright">
+              <span></span>
+            </label>
+            <button class="small-square">⚙</button>
+          </article>
+          <article class="module-row" data-module="cps_counter">
+            <span class="module-icon">↖</span>
+            <div>
+              <h2>CPS Counter</h2>
+              <p>Saves overlay state for a compatible NeX runtime mod.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="cps_counter">
+              <span></span>
+            </label>
+            <button class="small-square">⚙</button>
+          </article>
+          <article class="module-row" data-module="fps_boost">
+            <span class="module-icon">↗</span>
+            <div>
+              <h2>FPS Boost</h2>
+              <p>Applies JVM tuning for smoother garbage collection.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="fps_boost">
+              <span></span>
+            </label>
+            <button class="small-square">⚙</button>
+          </article>
+          <article class="module-row" data-module="armor_status">
+            <span class="module-icon">♜</span>
+            <div>
+              <h2>Armor Status</h2>
+              <p>Saves overlay state for a compatible NeX runtime mod.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="armor_status">
+              <span></span>
+            </label>
+            <button class="small-square">⚙</button>
+          </article>
+        </div>
+        <span class="hidden" id="moduleVersionPill"></span>
+        <span class="hidden" id="selectedVersionBadge"></span>
+        <span class="hidden" id="sessionAccount"></span>
+        <span class="hidden" id="installedModsCount"></span>
+        <span class="hidden" id="configState"></span>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+  <script src="./renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{
+  "name": "nex-client",
+  "version": "1.0.0",
+  "description": "NeX Client is a modern Minecraft launcher and multi-version client ecosystem.",
+  "main": "src/main.js",
+  "type": "module",
+  "homepage": "./",
+  "author": "NeX Client Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "build:linux": "electron-builder --linux --x64",
+    "build:wsl": "bash build-scripts/package-wsl.sh",
+    "dist": "electron-builder --win portable msi --linux deb --x64",
+    "lint:json": "node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('client-mod/config-injector.json','utf8')); console.log('JSON OK')\""
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^17.4.2",
+    "msmc": "^5.0.5"
+  },
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "build": {
+    "appId": "com.nexclient.launcher",
+    "productName": "NeX Client",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "package.json",
+      "src/**/*",
+      "client-mod/**/*"
+    ],
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "client-mod",
+        "to": "client-mod",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "msi": {
+      "oneClick": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NeX Client"
+    },
+    "portable": {
+      "artifactName": "NeXClient-${version}-standalone.exe"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Game",
+      "maintainer": "NeX Client Team"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1"
+      ]
+    }
+  }
+}

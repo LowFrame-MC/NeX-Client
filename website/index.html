@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NeX Client is an open-source Minecraft launcher with Microsoft auth, multi-version launching, mods, resource packs, and client module controls.">
+  <title>NeX Client</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="NeX Client home">
+      <span>NEX</span>
+      <small>CLIENT</small>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#open-source">Open Source</a>
+      <a href="#download">Download</a>
+    </nav>
+    <a class="header-action" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Minecraft launcher and client ecosystem</p>
+        <h1>NeX Client</h1>
+        <p class="lede">
+          A modern, human-feeling launcher built for Microsoft auth, multi-version Minecraft,
+          mod discovery, resource packs, client modules, and clear launch logs.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#download">Get Started</a>
+          <a class="button ghost" href="#features">Explore Features</a>
+        </div>
+      </div>
+
+      <figure class="product-shot">
+        <img src="./assets/nex-client-preview.png" alt="NeX Client launcher interface preview">
+      </figure>
+    </section>
+
+    <section class="feature-band" id="features">
+      <div class="section-heading">
+        <p class="eyebrow">Built for everyday play</p>
+        <h2>Everything players expect from a serious launcher.</h2>
+      </div>
+
+      <div class="feature-grid">
+        <article>
+          <span class="feature-icon">▶</span>
+          <h3>Multi-Version Launching</h3>
+          <p>Launch supported Minecraft versions with generated JVM and game arguments, Java detection, and process console logs.</p>
+        </article>
+        <article>
+          <span class="feature-icon">◆</span>
+          <h3>Mod Marketplace</h3>
+          <p>Browse Modrinth, CurseForge, and Planet Minecraft front pages without needing to search first.</p>
+        </article>
+        <article>
+          <span class="feature-icon">▣</span>
+          <h3>Resource Packs</h3>
+          <p>Install compatible resource packs directly into Minecraft's resourcepacks folder from supported marketplaces.</p>
+        </article>
+        <article>
+          <span class="feature-icon">✚</span>
+          <h3>Client Modules</h3>
+          <p>Manage module config, apply Fullbright and FPS tuning, and prepare overlay settings for a future runtime mod.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="split-section" id="open-source">
+      <div>
+        <p class="eyebrow">Open source ready</p>
+        <h2>Designed to be inspected, forked, and improved.</h2>
+      </div>
+      <div class="copy-card">
+        <p>
+          NeX Client keeps local secrets out of Git with a private <code>.env</code>, includes
+          a safe <code>.env.example</code>, and stores launcher code in a simple Electron project
+          structure that contributors can understand quickly.
+        </p>
+      </div>
+    </section>
+
+    <section class="download-panel" id="download">
+      <div>
+        <p class="eyebrow">Developer preview</p>
+        <h2>Run it locally today.</h2>
+        <p>Clone the project, install dependencies, add your own CurseForge API key, and start the Electron app.</p>
+      </div>
+      <pre><code>npm install
+copy .env.example .env
+npm start</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <span>NeX Client</span>
+    <span>Open-source Minecraft launcher.</span>
+  </footer>
+</body>
+</html>
