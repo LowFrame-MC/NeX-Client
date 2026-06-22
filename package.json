@@ -17,7 +17,8 @@
     "build:linux": "electron-builder --linux --x64",
     "build:wsl": "bash build-scripts/package-wsl.sh",
     "build:deb:wsl": "bash build-scripts/package-wsl.sh --deb-only",
-    "dist": "electron-builder --win nsis msi --linux deb --x64",
+    "build:rpm:wsl": "bash build-scripts/package-fedora-wsl.sh",
+    "dist": "electron-builder --win nsis msi --linux deb rpm --x64",
     "lint:json": "node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('client-mod/config-injector.json','utf8')); console.log('JSON OK')\""
   },
   "dependencies": {
@@ -96,6 +97,12 @@
       "target": [
         {
           "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
           "arch": [
             "x64"
           ]
