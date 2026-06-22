@@ -10,7 +10,6 @@ node_modules/
 dist/
 out/
 release/
-build/
 
 # Runtime data
 logs/

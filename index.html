@@ -18,7 +18,7 @@
       <a href="#open-source">Open Source</a>
       <a href="#download">Download</a>
     </nav>
-    <a class="header-action" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+    <a class="header-action" href="https://github.com/LowFrame-MC/NeX-Client" target="_blank" rel="noreferrer">GitHub</a>
   </header>
 
   <main id="top">
@@ -31,7 +31,7 @@
           mod discovery, resource packs, client modules, and clear launch logs.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#download">Get Started</a>
+          <a class="button primary" href="#download">Download</a>
           <a class="button ghost" href="#features">Explore Features</a>
         </div>
       </div>
@@ -87,19 +87,74 @@
 
     <section class="download-panel" id="download">
       <div>
-        <p class="eyebrow">Developer preview</p>
-        <h2>Run it locally today.</h2>
-        <p>Clone the project, install dependencies, add your own CurseForge API key, and start the Electron app.</p>
+        <p class="eyebrow">Install NeX Client</p>
+        <h2>Choose your platform.</h2>
+        <p>Download a guided Windows installer or a native Debian package for Linux.</p>
       </div>
-      <pre><code>npm install
-copy .env.example .env
-npm start</code></pre>
+      <div class="download-options" aria-label="Download options">
+        <button class="download-card" id="windowsDownloadButton" type="button">
+          <span class="download-icon">⊞</span>
+          <strong>Windows</strong>
+          <small>MSI or installer EXE</small>
+        </button>
+        <a class="download-card" href="https://github.com/LowFrame-MC/NeX-Client/releases/latest/download/NeXClient-1.0.0-linux-amd64.deb">
+          <span class="download-icon">⌬</span>
+          <strong>Debian Linux</strong>
+          <small>Native .deb package</small>
+        </a>
+      </div>
     </section>
   </main>
+
+  <div class="modal-backdrop" id="windowsInstallerModal" aria-hidden="true">
+    <section class="installer-modal" role="dialog" aria-modal="true" aria-labelledby="installerModalTitle">
+      <button class="modal-close" id="closeInstallerModal" type="button" aria-label="Close installer options">×</button>
+      <p class="eyebrow">Windows installer type</p>
+      <h2 id="installerModalTitle">Choose an installer.</h2>
+      <div class="installer-options">
+        <a class="installer-option recommended" href="https://github.com/LowFrame-MC/NeX-Client/releases/latest/download/NeXClient-1.0.0-win-x64.msi">
+          <span>
+            <strong>MSI Installer</strong>
+            <small>Recommended for most Windows users.</small>
+          </span>
+          <em>Recommended</em>
+        </a>
+        <a class="installer-option" href="https://github.com/LowFrame-MC/NeX-Client/releases/latest/download/NeXClient-1.0.0-Setup.exe">
+          <span>
+            <strong>EXE Installer</strong>
+            <small>Standard setup wizard for Windows.</small>
+          </span>
+        </a>
+      </div>
+    </section>
+  </div>
 
   <footer>
     <span>NeX Client</span>
     <span>Open-source Minecraft launcher.</span>
   </footer>
+  <script>
+    const modal = document.getElementById('windowsInstallerModal');
+    const openButton = document.getElementById('windowsDownloadButton');
+    const closeButton = document.getElementById('closeInstallerModal');
+
+    function setModalOpen(open) {
+      modal.classList.toggle('open', open);
+      modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+
+    openButton.addEventListener('click', () => setModalOpen(true));
+    closeButton.addEventListener('click', () => setModalOpen(false));
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        setModalOpen(false);
+      }
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setModalOpen(false);
+      }
+    });
+  </script>
 </body>
 </html>

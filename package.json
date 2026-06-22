@@ -15,7 +15,7 @@
     "build:win": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux --x64",
     "build:wsl": "bash build-scripts/package-wsl.sh",
-    "dist": "electron-builder --win portable msi --linux deb --x64",
+    "dist": "electron-builder --win nsis msi --linux deb --x64",
     "lint:json": "node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('client-mod/config-injector.json','utf8')); console.log('JSON OK')\""
   },
   "dependencies": {
@@ -34,7 +34,7 @@
   "build": {
     "appId": "com.nexclient.launcher",
     "productName": "NeX Client",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "NeXClient-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -55,9 +55,10 @@
       }
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
@@ -71,6 +72,15 @@
       ],
       "requestedExecutionLevel": "asInvoker"
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NeX Client",
+      "artifactName": "NeXClient-${version}-Setup.exe"
+    },
     "msi": {
       "oneClick": false,
       "perMachine": false,
@@ -79,10 +89,9 @@
       "createStartMenuShortcut": true,
       "shortcutName": "NeX Client"
     },
-    "portable": {
-      "artifactName": "NeXClient-${version}-standalone.exe"
-    },
     "linux": {
+      "desktopName": "NeX Client",
+      "syncDesktopName": true,
       "target": [
         {
           "target": "deb",

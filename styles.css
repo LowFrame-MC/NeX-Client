@@ -34,6 +34,11 @@ a {
   text-decoration: none;
 }
 
+button {
+  color: inherit;
+  font: inherit;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -77,7 +82,10 @@ nav {
 
 nav a,
 .header-action,
-.button {
+.button,
+.download-card,
+.installer-option,
+.modal-close {
   transition: transform 180ms ease, color 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
@@ -99,7 +107,10 @@ nav a:hover,
 }
 
 .header-action:hover,
-.button:hover {
+.button:hover,
+.download-card:hover,
+.installer-option:hover,
+.modal-close:hover {
   transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.7);
 }
@@ -273,19 +284,135 @@ code {
   margin: 0 clamp(20px, 5vw, 72px) clamp(54px, 7vw, 92px);
 }
 
-pre {
-  margin: 0;
-  overflow: auto;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: #070911;
+.download-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-pre code {
-  color: #f8fafc;
-  font-size: 15px;
-  line-height: 1.7;
+.download-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 172px;
+  flex-direction: column;
+  gap: 9px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+  text-align: center;
+}
+
+.download-card strong {
+  font-size: 20px;
+}
+
+.download-card small,
+.installer-option small {
+  color: var(--muted);
+}
+
+.download-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8b5cf6, #22c55e);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  place-items: center;
+  padding: 22px;
+  background: rgba(3, 5, 12, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.modal-backdrop.open {
+  display: grid;
+}
+
+.installer-modal {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 18, 28, 0.96);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
+  animation: modalIn 180ms ease both;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.installer-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.installer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 86px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.installer-option span {
+  display: grid;
+  gap: 5px;
+}
+
+.installer-option em {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  color: #bbf7d0;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.installer-option.recommended {
+  border-color: rgba(34, 197, 94, 0.48);
+  background: rgba(34, 197, 94, 0.07);
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 footer {
@@ -313,7 +440,8 @@ footer span:first-child {
   .hero,
   .feature-grid,
   .split-section,
-  .download-panel {
+  .download-panel,
+  .download-options {
     grid-template-columns: 1fr;
   }
 

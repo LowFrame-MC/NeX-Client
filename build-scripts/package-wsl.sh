@@ -44,6 +44,13 @@ install_system_dependencies() {
   install_apt_package rpm
   install_apt_package fakeroot
   install_apt_package dpkg
+  install_apt_package ruby
+  install_apt_package ruby-dev
+  install_apt_package build-essential
+  if ! need_command fpm; then
+    log "Installing fpm for Debian packaging"
+    sudo gem install --no-document fpm
+  fi
   install_wine
 }
 
@@ -74,8 +81,8 @@ run_builds() {
   export CSC_IDENTITY_AUTO_DISCOVERY=false
   export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
 
-  log "Building standalone Windows executable"
-  npx electron-builder --win portable --x64 --publish never
+  log "Building Windows EXE installer"
+  npx electron-builder --win nsis --x64 --publish never
 
   log "Building Windows MSI installer"
   npx electron-builder --win msi --x64 --publish never
