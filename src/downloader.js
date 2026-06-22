@@ -1,4 +1,5 @@
 import axios from 'axios';
+import os from 'node:os';
 import path from 'node:path';
 import { createWriteStream } from 'node:fs';
 import { mkdir, readdir, stat, unlink } from 'node:fs/promises';
@@ -11,6 +12,7 @@ const MINECRAFT_GAME_ID = 432;
 const CURSEFORGE_RESOURCE_PACK_CLASS_ID = 12;
 const { app } = electron;
 const { net } = electron;
+let configuredCurseForgeApiKey = process.env.CURSEFORGE_API_KEY || '';
 
 const http = axios.create({
   timeout: 30000,
@@ -19,24 +21,26 @@ const http = axios.create({
   }
 });
 
+export function setCurseForgeApiKey(apiKey = '') {
+  configuredCurseForgeApiKey = String(apiKey || '').trim();
+}
+
+export function getNexRootDirectory() {
+  return path.join(os.homedir(), '.nex');
+}
+
+export function getInstanceDirectory(version = 'global') {
+  return path.join(getNexRootDirectory(), 'instances', String(version || 'global'));
+}
+
 function getModsDirectory(version = 'global') {
-  return path.join(app.getPath('userData'), 'mods', version);
+  return path.join(getInstanceDirectory(version), 'mods');
 }
 
-function getMinecraftDirectory() {
-  if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(app.getPath('home'), 'AppData', 'Roaming'), '.minecraft');
-  }
-
-  if (process.platform === 'darwin') {
-    return path.join(app.getPath('home'), 'Library', 'Application Support', 'minecraft');
-  }
-
-  return path.join(app.getPath('home'), '.minecraft');
-}
-
-function getResourcePacksDirectory(gameDirectory = '') {
-  return path.join(gameDirectory || getMinecraftDirectory(), 'resourcepacks');
+function getResourcePacksDirectory(versionOrDirectory = 'global') {
+  const value = String(versionOrDirectory || 'global');
+  const baseDirectory = path.isAbsolute(value) ? value : getInstanceDirectory(value);
+  return path.join(baseDirectory, 'resourcepacks');
 }
 
 async function ensureModsDirectory(version) {
@@ -99,7 +103,7 @@ async function streamToFile({ url, filePath, fileName, source, onProgress }) {
 }
 
 function curseForgeHeaders() {
-  const apiKey = process.env.CURSEFORGE_API_KEY;
+  const apiKey = configuredCurseForgeApiKey || process.env.CURSEFORGE_API_KEY;
 
   if (!apiKey) {
     throw new Error('CurseForge requires CURSEFORGE_API_KEY to use the official public API.');
@@ -413,7 +417,7 @@ export async function downloadModrinthResourcePack({ projectId, versionId, gameV
     throw new Error('The selected Modrinth resource pack has no downloadable file.');
   }
 
-  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory);
+  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory || gameVersion);
   const filePath = path.join(resourcePacksDir, file.filename);
 
   return streamToFile({
@@ -648,7 +652,7 @@ export async function downloadCurseForgeResourcePack({ modId, fileId, gameVersio
     gameVersion,
     resourcePack: true
   });
-  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory);
+  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory || gameVersion);
   const filePath = path.join(resourcePacksDir, fileName);
 
   return streamToFile({
@@ -689,7 +693,7 @@ export async function downloadResourcePack(payload, onProgress) {
 }
 
 export async function getInstalledMods(version = null) {
-  const baseDir = version ? getModsDirectory(version) : path.join(app.getPath('userData'), 'mods');
+  const baseDir = version ? getModsDirectory(version) : path.join(getNexRootDirectory(), 'instances');
   await mkdir(baseDir, { recursive: true });
   const mods = [];
 
@@ -724,7 +728,7 @@ export async function getInstalledMods(version = null) {
 }
 
 export async function getInstalledResourcePacks(gameDirectory = '') {
-  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory);
+  const resourcePacksDir = await ensureResourcePacksDirectory(gameDirectory || 'global');
   const entries = await readdir(resourcePacksDir, { withFileTypes: true });
   const packs = [];
 
@@ -747,7 +751,7 @@ export async function getInstalledResourcePacks(gameDirectory = '') {
 }
 
 export async function deleteInstalledMod(filePath) {
-  if (!filePath.startsWith(path.join(app.getPath('userData'), 'mods'))) {
+  if (!filePath.startsWith(path.join(getNexRootDirectory(), 'instances'))) {
     throw new Error('Refusing to delete a file outside the NeX Client mods directory.');
   }
 

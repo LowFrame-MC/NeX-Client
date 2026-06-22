@@ -63,6 +63,15 @@ function bindElements() {
     downloadProgress: $('#downloadProgress'),
     gameDirectoryInput: $('#gameDirectoryInput'),
     javaPathInput: $('#javaPathInput'),
+    curseForgeApiKeyInput: $('#curseForgeApiKeyInput'),
+    saveCurseForgeApiKeyButton: $('#saveCurseForgeApiKeyButton'),
+    curseForgeKeyStatus: $('#curseForgeKeyStatus'),
+    curseForgeSetupModal: $('#curseForgeSetupModal'),
+    curseForgeSetupApiKeyInput: $('#curseForgeSetupApiKeyInput'),
+    openCurseForgeConsoleButton: $('#openCurseForgeConsoleButton'),
+    skipCurseForgeSetupButton: $('#skipCurseForgeSetupButton'),
+    saveCurseForgeSetupButton: $('#saveCurseForgeSetupButton'),
+    openInstancesInfoButton: $('#openInstancesInfoButton'),
     windowWidthInput: $('#windowWidthInput'),
     windowHeightInput: $('#windowHeightInput'),
     saveSettingsButton: $('#saveSettingsButton'),
@@ -152,6 +161,13 @@ function bindEvents() {
   });
 
   elements.saveSettingsButton.addEventListener('click', () => saveSettings());
+  elements.saveCurseForgeApiKeyButton.addEventListener('click', () => saveCurseForgeApiKey(elements.curseForgeApiKeyInput.value));
+  elements.saveCurseForgeSetupButton.addEventListener('click', () => saveCurseForgeApiKey(elements.curseForgeSetupApiKeyInput.value, { fromSetup: true }));
+  elements.skipCurseForgeSetupButton.addEventListener('click', dismissCurseForgeSetup);
+  elements.openCurseForgeConsoleButton.addEventListener('click', () => window.nex.app.openExternal('https://console.curseforge.com/'));
+  elements.openInstancesInfoButton.addEventListener('click', () => {
+    toast('NeX stores game files under your user folder: .nex/instances/<version>', 'success', 4600);
+  });
 
   window.nex.mods.onProgress((progress) => {
     updateDownloadProgress(progress);
@@ -210,6 +226,8 @@ async function loadConfig() {
     state.config = result.config;
     elements.configState.textContent = 'Loaded';
     hydrateSettings();
+    updateCurseForgeAvailability();
+    maybeShowCurseForgeSetup();
   } catch (error) {
     elements.configState.textContent = 'Error';
     toast(error.message, 'error');
@@ -226,7 +244,7 @@ async function loadInstalledMods() {
 
 async function loadInstalledResourcePacks() {
   const result = await window.nex.resourcePacks.installed({
-    gameDirectory: state.config?.launcher?.gameDirectory || ''
+    version: elements.versionSelect.value
   });
 
   if (result.ok) {
@@ -236,11 +254,12 @@ async function loadInstalledResourcePacks() {
 
 function hydrateSettings() {
   const launcher = state.config?.launcher || {};
-  elements.gameDirectoryInput.value = launcher.gameDirectory || '';
+  elements.gameDirectoryInput.value = '~/.nex/instances/<version>';
   elements.javaPathInput.value = launcher.javaPath || '';
   elements.windowWidthInput.value = launcher.window?.width || 1280;
   elements.windowHeightInput.value = launcher.window?.height || 720;
   elements.memorySelect.value = launcher.memory?.max || '4G';
+  elements.curseForgeApiKeyInput.value = state.config?.integrations?.curseForgeApiKey || '';
 }
 
 function switchTab(tab) {
@@ -347,7 +366,7 @@ async function updateModule(moduleName, enabled) {
 async function saveSettings() {
   if (!state.config) return;
 
-  state.config.launcher.gameDirectory = elements.gameDirectoryInput.value.trim();
+  state.config.launcher.gameDirectory = '';
   state.config.launcher.javaPath = elements.javaPathInput.value.trim();
   state.config.launcher.memory.max = elements.memorySelect.value;
   state.config.launcher.window.width = Number(elements.windowWidthInput.value || 1280);
@@ -355,6 +374,93 @@ async function saveSettings() {
   state.config.updatedAt = new Date().toISOString();
 
   await saveConfig(true);
+}
+
+function hasCurseForgeKey() {
+  return Boolean(state.config?.integrations?.curseForgeApiKey);
+}
+
+function updateCurseForgeAvailability() {
+  const enabled = hasCurseForgeKey();
+  elements.curseForgeKeyStatus.textContent = enabled ? 'Enabled' : 'Disabled until an API key is saved';
+
+  const sourceButtons = [
+    ...$all('[data-source-tab="curseforge"]'),
+    ...$all('[data-resource-source-tab="curseforge"]')
+  ];
+
+  for (const button of sourceButtons) {
+    button.classList.toggle('hidden', !enabled);
+  }
+
+  if (!enabled && elements.modSourceSelect.value === 'curseforge') {
+    elements.modSourceSelect.value = 'modrinth';
+    $all('[data-source-tab]').forEach((tab) => tab.classList.toggle('active', tab.dataset.sourceTab === 'modrinth'));
+  }
+
+  if (!enabled && elements.resourcePackSourceSelect.value === 'curseforge') {
+    elements.resourcePackSourceSelect.value = 'modrinth';
+    $all('[data-resource-source-tab]').forEach((tab) => tab.classList.toggle('active', tab.dataset.resourceSourceTab === 'modrinth'));
+  }
+}
+
+function maybeShowCurseForgeSetup() {
+  if (hasCurseForgeKey() || state.config?.integrations?.curseForgePrompted) {
+    return;
+  }
+
+  elements.curseForgeSetupModal.classList.remove('hidden');
+  elements.curseForgeSetupModal.setAttribute('aria-hidden', 'false');
+  elements.curseForgeSetupApiKeyInput.focus();
+}
+
+function hideCurseForgeSetup() {
+  elements.curseForgeSetupModal.classList.add('hidden');
+  elements.curseForgeSetupModal.setAttribute('aria-hidden', 'true');
+}
+
+async function saveCurseForgeApiKey(apiKey, options = {}) {
+  const key = String(apiKey || '').trim();
+  if (!key && options.fromSetup) {
+    toast('Paste a CurseForge API key first.', 'error');
+    return;
+  }
+
+  try {
+    const result = await window.nex.config.setCurseForgeKey({ apiKey: key });
+    if (!result.ok) {
+      throw new Error(result.error || 'Could not save CurseForge API key');
+    }
+
+    state.config = result.config;
+    hydrateSettings();
+    updateCurseForgeAvailability();
+    hideCurseForgeSetup();
+    await searchMods({ allowEmpty: true });
+    await searchResourcePacks({ allowEmpty: true });
+    if (key) {
+      toast(options.fromSetup ? 'CurseForge browsing enabled' : 'CurseForge API key saved', 'success');
+    } else {
+      toast('CurseForge API key cleared. CurseForge browsing is hidden.', 'success', 4200);
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function dismissCurseForgeSetup() {
+  try {
+    const result = await window.nex.config.dismissCurseForgeKey();
+    if (result.ok) {
+      state.config = result.config;
+    }
+  } catch {
+    // Non-critical; still hide the prompt for this session.
+  }
+
+  hideCurseForgeSetup();
+  updateCurseForgeAvailability();
+  toast('CurseForge browsing hidden until you add an API key in Settings.', 'success', 4200);
 }
 
 async function saveConfig(showToast) {
@@ -633,8 +739,7 @@ async function downloadResourcePack(pack) {
 
   const payload = {
     source: pack.source,
-    gameVersion: elements.versionSelect.value,
-    gameDirectory: state.config?.launcher?.gameDirectory || ''
+    gameVersion: elements.versionSelect.value
   };
 
   if (pack.source === 'curseforge') {

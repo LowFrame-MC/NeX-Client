@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "profile": "default",
   "updatedAt": null,
+  "integrations": {
+    "curseForgeApiKey": "",
+    "curseForgePrompted": false
+  },
   "launcher": {
     "gameDirectory": "",
     "javaPath": "",

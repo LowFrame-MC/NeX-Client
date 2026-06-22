@@ -8,6 +8,7 @@ import { authenticateUser, normalizeAuthProfile } from './auth.js';
 import {
   downloadMod,
   downloadResourcePack,
+  getInstanceDirectory,
   getInstalledMods,
   getInstalledResourcePacks,
   searchCurseForgeMods,
@@ -15,7 +16,8 @@ import {
   searchModrinthMods,
   searchModrinthResourcePacks,
   searchPlanetMinecraftMods,
-  searchPlanetMinecraftResourcePacks
+  searchPlanetMinecraftResourcePacks,
+  setCurseForgeApiKey
 } from './downloader.js';
 import {
   getLaunchPreview,
@@ -94,6 +96,15 @@ async function writeClientConfig(config) {
 function normalizeClientConfig(config) {
   const normalized = structuredClone(config || {});
   normalized.versions ||= {};
+  normalized.integrations ||= {};
+  if (!Object.hasOwn(normalized.integrations, 'curseForgeApiKey')) {
+    normalized.integrations.curseForgeApiKey = process.env.CURSEFORGE_API_KEY || '';
+  }
+
+  normalized.integrations.curseForgeApiKey = String(normalized.integrations.curseForgeApiKey || '').trim();
+  normalized.integrations.curseForgePrompted = Boolean(normalized.integrations.curseForgePrompted);
+  normalized.launcher ||= {};
+  normalized.launcher.gameDirectory = '';
 
   if (normalized.versions['1.21.1'] && !normalized.versions['1.21.11']) {
     normalized.versions['1.21.11'] = normalized.versions['1.21.1'];
@@ -193,6 +204,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('search-mods', async (_event, payload = {}) => {
+    const config = await readClientConfig();
     const query = String(payload.query ?? '').trim();
     const source = ['curseforge', 'planetminecraft'].includes(payload.source) ? payload.source : 'modrinth';
     const gameVersion = String(payload.gameVersion ?? '1.20.4');
@@ -200,6 +212,7 @@ function registerIpc() {
 
     let mods;
     if (source === 'curseforge') {
+      setCurseForgeApiKey(config.integrations?.curseForgeApiKey || '');
       mods = await searchCurseForgeMods(query, gameVersion, loader);
     } else if (source === 'planetminecraft') {
       mods = await searchPlanetMinecraftMods(query, gameVersion, loader);
@@ -211,6 +224,11 @@ function registerIpc() {
   });
 
   ipcMain.handle('download-mod', async (event, payload = {}) => {
+    const config = await readClientConfig();
+    if (payload?.source === 'curseforge') {
+      setCurseForgeApiKey(config.integrations?.curseForgeApiKey || '');
+    }
+
     const filePath = await downloadMod(payload, (progress) => {
       event.sender.send('download-progress', progress);
     });
@@ -224,12 +242,14 @@ function registerIpc() {
   });
 
   ipcMain.handle('search-resource-packs', async (_event, payload = {}) => {
+    const config = await readClientConfig();
     const query = String(payload.query ?? '').trim();
     const source = ['curseforge', 'planetminecraft'].includes(payload.source) ? payload.source : 'modrinth';
     const gameVersion = String(payload.gameVersion ?? '1.20.4');
 
     let resourcePacks;
     if (source === 'curseforge') {
+      setCurseForgeApiKey(config.integrations?.curseForgeApiKey || '');
       resourcePacks = await searchCurseForgeResourcePacks(query, gameVersion);
     } else if (source === 'planetminecraft') {
       resourcePacks = await searchPlanetMinecraftResourcePacks(query);
@@ -242,9 +262,13 @@ function registerIpc() {
 
   ipcMain.handle('download-resource-pack', async (event, payload = {}) => {
     const config = await readClientConfig();
+    if (payload?.source === 'curseforge') {
+      setCurseForgeApiKey(config.integrations?.curseForgeApiKey || '');
+    }
+
     const filePath = await downloadResourcePack({
       ...payload,
-      gameDirectory: payload.gameDirectory || config.launcher?.gameDirectory || ''
+      gameDirectory: payload.gameDirectory || getInstanceDirectory(payload.gameVersion || 'global')
     }, (progress) => {
       event.sender.send('download-progress', progress);
     });
@@ -253,8 +277,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('installed-resource-packs', async (_event, payload = {}) => {
-    const config = await readClientConfig();
-    const resourcePacks = await getInstalledResourcePacks(payload.gameDirectory || config.launcher?.gameDirectory || '');
+    const resourcePacks = await getInstalledResourcePacks(payload.gameDirectory || getInstanceDirectory(payload.version || 'global'));
     return { ok: true, resourcePacks };
   });
 
@@ -281,6 +304,26 @@ function registerIpc() {
     config.versions[version].modules[moduleName] = enabled;
     config.updatedAt = new Date().toISOString();
 
+    const saved = await writeClientConfig(config);
+    return { ok: true, config: saved };
+  });
+
+  ipcMain.handle('set-curseforge-api-key', async (_event, payload = {}) => {
+    const config = await readClientConfig();
+    config.integrations ||= {};
+    config.integrations.curseForgeApiKey = String(payload.apiKey || '').trim();
+    config.integrations.curseForgePrompted = true;
+    config.updatedAt = new Date().toISOString();
+    const saved = await writeClientConfig(config);
+    setCurseForgeApiKey(saved.integrations?.curseForgeApiKey || '');
+    return { ok: true, config: saved, hasKey: Boolean(saved.integrations?.curseForgeApiKey) };
+  });
+
+  ipcMain.handle('dismiss-curseforge-api-key', async () => {
+    const config = await readClientConfig();
+    config.integrations ||= {};
+    config.integrations.curseForgePrompted = true;
+    config.updatedAt = new Date().toISOString();
     const saved = await writeClientConfig(config);
     return { ok: true, config: saved };
   });

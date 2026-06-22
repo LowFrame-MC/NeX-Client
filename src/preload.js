@@ -39,7 +39,9 @@ contextBridge.exposeInMainWorld('nex', {
   config: {
     read: () => invoke('get-client-config'),
     save: (config) => invoke('save-client-config', config),
-    setModule: (payload) => invoke('set-module-toggle', payload)
+    setModule: (payload) => invoke('set-module-toggle', payload),
+    setCurseForgeKey: (payload) => invoke('set-curseforge-api-key', payload),
+    dismissCurseForgeKey: () => invoke('dismiss-curseforge-api-key')
   },
   window: {
     minimize: () => invoke('window-minimize'),

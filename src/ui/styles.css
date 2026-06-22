@@ -803,6 +803,60 @@ pre {
   width: min(360px, calc(100vw - 36px));
 }
 
+.setup-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 5, 12, 0.74);
+  backdrop-filter: blur(18px);
+}
+
+.setup-dialog {
+  display: grid;
+  gap: 18px;
+  width: min(620px, 100%);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  animation: panelIn 220ms ease both;
+}
+
+.setup-copy {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.setup-copy h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.setup-copy p,
+.setup-steps {
+  color: var(--muted);
+}
+
+.setup-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.45;
+}
+
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .toast {
   padding: 13px 14px;
   border: 1px solid var(--line);

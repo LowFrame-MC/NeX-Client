@@ -1,8 +1,10 @@
-import { spawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import mclc from 'minecraft-launcher-core';
+
+const { Client: MinecraftClient } = mclc;
 
 export const SUPPORTED_VERSIONS = Object.freeze([
   '1.8.9',
@@ -36,16 +38,12 @@ function platformKey() {
   return 'linux';
 }
 
-function getMinecraftDirectory() {
-  if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), '.minecraft');
-  }
+export function getNexRootDirectory() {
+  return path.join(os.homedir(), '.nex');
+}
 
-  if (process.platform === 'darwin') {
-    return path.join(os.homedir(), 'Library', 'Application Support', 'minecraft');
-  }
-
-  return path.join(os.homedir(), '.minecraft');
+export function getInstanceDirectory(version = 'global') {
+  return path.join(getNexRootDirectory(), 'instances', String(version || 'global'));
 }
 
 async function findWindowsJavaRoots(preferredMajor) {
@@ -415,8 +413,9 @@ async function writeRuntimeModuleConfig({ minecraftDir, version, modules }) {
 
 async function applyClientSideSettings({ command, onLog }) {
   const modules = command.modules || {};
+  const minecraftDir = command.instanceDir || command.cwd;
   const runtimeConfigPath = await writeRuntimeModuleConfig({
-    minecraftDir: command.cwd,
+    minecraftDir,
     version: command.version,
     modules
   });
@@ -429,7 +428,7 @@ async function applyClientSideSettings({ command, onLog }) {
   });
 
   if (modules.fullbright) {
-    const optionsPath = await patchOptionsFileForFullbright(command.cwd);
+    const optionsPath = await patchOptionsFileForFullbright(minecraftDir);
     onLog({
       level: 'info',
       stream: 'launcher',
@@ -501,7 +500,7 @@ function buildJvmArgs(versionJson, variables, versionConfig, clientConfig) {
 }
 
 async function collectVersionMods(version) {
-  const modsDir = path.join(os.homedir(), '.nex-client', 'mods', version);
+  const modsDir = path.join(getInstanceDirectory(version), 'mods');
 
   if (!existsSync(modsDir)) {
     return [];
@@ -515,7 +514,23 @@ export function getSupportedVersions() {
   return [...SUPPORTED_VERSIONS];
 }
 
-export async function buildLaunchCommand({ version, profile, clientConfig = {}, mods = [] }) {
+function normalizeMclcAuth(profile) {
+  return {
+    access_token: profile.accessToken,
+    client_token: profile.clientId || profile.uuid,
+    uuid: profile.uuid,
+    name: profile.username,
+    user_properties: JSON.stringify(profile.userProperties || {}),
+    meta: {
+      type: profile.userType || 'msa',
+      demo: Boolean(profile.demo),
+      xuid: profile.xuid || '',
+      clientId: profile.clientId || ''
+    }
+  };
+}
+
+async function buildMclcOptions({ version, profile, clientConfig = {}, mods = [] }) {
   if (!SUPPORTED_VERSIONS.includes(version)) {
     throw new Error(`Unsupported version "${version}". Supported versions: ${SUPPORTED_VERSIONS.join(', ')}`);
   }
@@ -524,74 +539,66 @@ export async function buildLaunchCommand({ version, profile, clientConfig = {}, 
     throw new Error('A valid Microsoft Minecraft profile is required before launch.');
   }
 
-  const minecraftDir = clientConfig?.launcher?.gameDirectory || getMinecraftDirectory();
-  await mkdir(path.join(minecraftDir, 'nex-runtime', 'natives', version), { recursive: true });
+  const instanceDir = getInstanceDirectory(version);
+  await mkdir(path.join(instanceDir, 'mods'), { recursive: true });
+  await mkdir(path.join(instanceDir, 'resourcepacks'), { recursive: true });
+  await mkdir(path.join(instanceDir, 'natives'), { recursive: true });
 
-  const versionJson = await readVersionJson(version, minecraftDir);
-  if (versionNeedsVariable(versionJson, 'auth_xuid') && !profile.xuid) {
-    throw new Error('Your saved login is missing the Microsoft XUID required by this Minecraft version. Log out and log in again to refresh the NeX profile.');
-  }
-
+  const memory = clientConfig?.launcher?.memory || {};
+  const launcherWindow = clientConfig?.launcher?.window || DEFAULT_WINDOW;
   const versionConfig = extractVersionConfig(clientConfig, version);
-  const features = buildFeatureFlags(profile, clientConfig);
-  const assetsIndexName = LEGACY_ASSET_INDEX[version] || versionJson.assetIndex?.id || version;
-  const nativesDirectory = path.join(minecraftDir, 'nex-runtime', 'natives', version);
   const javaExecutable = await findJavaExecutable(version, clientConfig);
-  const mergedMods = [...mods, ...(await collectVersionMods(version))];
-  const { classpath, nativeEntries } = createClasspath(versionJson, version, minecraftDir, mergedMods);
-
-  const variables = {
-    auth_player_name: profile.username,
-    version_name: version,
-    game_directory: minecraftDir,
-    assets_root: path.join(minecraftDir, 'assets'),
-    assets_index_name: assetsIndexName,
-    auth_uuid: profile.uuid,
-    auth_access_token: profile.accessToken,
-    auth_xuid: profile.xuid || '',
-    clientid: profile.clientId || '',
-    user_properties: JSON.stringify(profile.userProperties || {}),
-    quickPlayPath: clientConfig.launcher?.quickPlay?.path || '',
-    quickPlaySingleplayer: clientConfig.launcher?.quickPlay?.singleplayer || '',
-    quickPlayMultiplayer: clientConfig.launcher?.quickPlay?.multiplayer || '',
-    quickPlayRealms: clientConfig.launcher?.quickPlay?.realms || '',
-    user_type: profile.userType || 'msa',
-    version_type: versionJson.type || 'release',
-    resolution_width: String(clientConfig?.launcher?.window?.width || DEFAULT_WINDOW.width),
-    resolution_height: String(clientConfig?.launcher?.window?.height || DEFAULT_WINDOW.height),
-    natives_directory: nativesDirectory,
-    launcher_name: 'NeX Client',
-    launcher_version: '1.0.0',
-    classpath,
-    classpath_separator: path.delimiter,
-    library_directory: path.join(minecraftDir, 'libraries'),
-    version_type_name: versionJson.type || 'release'
-  };
-
-  const jvmArgs = buildJvmArgs(versionJson, variables, versionConfig, clientConfig);
-  const gameArgs = versionJson.arguments?.game
-    ? flattenArguments(versionJson.arguments.game, variables, features)
-    : legacyGameArguments(versionJson, variables);
-
-  const commandArgs = [
-    ...jvmArgs,
-    getMainClass(versionJson),
-    ...gameArgs
-  ];
-
-  if (!jvmArgs.includes('-cp')) {
-    commandArgs.splice(jvmArgs.length, 0, '-cp', classpath);
-  }
+  const moduleArgs = buildModuleJvmArgs(versionConfig);
+  const extraJvmArgs = clientConfig?.launcher?.extraJvmArgs || [];
+  const customArgs = [...moduleArgs, ...extraJvmArgs];
+  const mergedMods = [...mods, ...(await collectVersionMods(version))].filter(Boolean);
 
   return {
     version,
+    instanceDir,
+    options: {
+      authorization: normalizeMclcAuth(profile),
+      root: instanceDir,
+      cache: path.join(getNexRootDirectory(), 'cache'),
+      version: {
+        number: version,
+        type: 'release'
+      },
+      memory: {
+        min: memory.min || '1G',
+        max: memory.max || '4G'
+      },
+      javaPath: javaExecutable,
+      customArgs,
+      window: {
+        width: Number(launcherWindow.width || DEFAULT_WINDOW.width),
+        height: Number(launcherWindow.height || DEFAULT_WINDOW.height)
+      },
+      overrides: {
+        gameDirectory: instanceDir,
+        cwd: instanceDir,
+        natives: path.join(instanceDir, 'natives', version),
+        detached: false
+      }
+    },
     javaExecutable,
-    args: commandArgs,
-    commandLine: [javaExecutable, ...commandArgs].map(quoteCommandPart).join(' '),
-    cwd: minecraftDir,
-    classpath,
-    nativeEntries,
-    modules: versionConfig.modules || {}
+    mods: mergedMods,
+    modules: versionConfig.modules || {},
+    commandLine: `MCLC launch ${version} from ${quoteCommandPart(instanceDir)} using ${quoteCommandPart(javaExecutable)}`
+  };
+}
+
+export async function buildLaunchCommand(options) {
+  const mclcLaunch = await buildMclcOptions(options);
+  return {
+    version: mclcLaunch.version,
+    javaExecutable: mclcLaunch.javaExecutable,
+    args: [],
+    commandLine: mclcLaunch.commandLine,
+    cwd: mclcLaunch.instanceDir,
+    classpath: '',
+    nativeEntries: [],
+    modules: mclcLaunch.modules
   };
 }
 
@@ -615,7 +622,7 @@ export async function getLaunchPreview(options) {
 }
 
 export async function launchMinecraft(options) {
-  const command = await buildLaunchCommand(options);
+  const command = await buildMclcOptions(options);
   const onLog = typeof options.onLog === 'function' ? options.onLog : () => {};
 
   await applyClientSideSettings({ command, onLog });
@@ -630,7 +637,7 @@ export async function launchMinecraft(options) {
     level: 'debug',
     stream: 'launcher',
     version: command.version,
-    message: `Working directory: ${command.cwd}`
+    message: `Instance directory: ${command.instanceDir}`
   });
   onLog({
     level: 'debug',
@@ -642,15 +649,61 @@ export async function launchMinecraft(options) {
     level: 'debug',
     stream: 'launcher',
     version: command.version,
-    message: command.commandLine
+    message: 'MCLC will download missing Minecraft files into this NeX instance before launch.'
   });
 
-  const child = spawn(command.javaExecutable, command.args, {
-    cwd: command.cwd,
-    detached: false,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: false
+  const launcher = new MinecraftClient();
+
+  launcher.on('debug', (message) => {
+    onLog({
+      level: 'debug',
+      stream: 'mclc',
+      version: command.version,
+      message: String(message)
+    });
   });
+
+  launcher.on('data', (message) => {
+    onLog({
+      level: 'info',
+      stream: 'stdout',
+      version: command.version,
+      message: String(message).trim()
+    });
+  });
+
+  launcher.on('download', (message) => {
+    onLog({
+      level: 'info',
+      stream: 'download',
+      version: command.version,
+      message: String(message)
+    });
+  });
+
+  launcher.on('progress', (progress) => {
+    onLog({
+      level: 'info',
+      stream: 'download',
+      version: command.version,
+      message: `${progress.type || 'files'} ${progress.task || 0}/${progress.total || 0}`
+    });
+  });
+
+  launcher.on('arguments', (launchArguments) => {
+    onLog({
+      level: 'debug',
+      stream: 'launcher',
+      version: command.version,
+      message: Array.isArray(launchArguments) ? launchArguments.map(quoteCommandPart).join(' ') : String(launchArguments)
+    });
+  });
+
+  const child = await launcher.launch(command.options);
+
+  if (!child) {
+    throw new Error('MCLC did not return a Minecraft process.');
+  }
 
   onLog({
     level: 'info',
@@ -658,38 +711,6 @@ export async function launchMinecraft(options) {
     version: command.version,
     pid: child.pid,
     message: `Minecraft process started with PID ${child.pid}`
-  });
-
-  child.stdout.on('data', (chunk) => {
-    const message = chunk.toString().trim();
-    if (!message) {
-      return;
-    }
-
-    console.log(`[minecraft:${command.version}:stdout] ${message}`);
-    onLog({
-      level: 'info',
-      stream: 'stdout',
-      version: command.version,
-      pid: child.pid,
-      message
-    });
-  });
-
-  child.stderr.on('data', (chunk) => {
-    const message = chunk.toString().trim();
-    if (!message) {
-      return;
-    }
-
-    console.error(`[minecraft:${command.version}:stderr] ${message}`);
-    onLog({
-      level: 'error',
-      stream: 'stderr',
-      version: command.version,
-      pid: child.pid,
-      message
-    });
   });
 
   child.on('error', (error) => {
