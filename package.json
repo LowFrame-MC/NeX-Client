@@ -2,6 +2,7 @@
   "name": "nex-client",
   "version": "1.0.0",
   "description": "NeX Client is a modern Minecraft launcher and multi-version client ecosystem.",
+  "desktopName": "NeX Client",
   "main": "src/main.js",
   "type": "module",
   "homepage": "./",
@@ -91,7 +92,6 @@
       "shortcutName": "NeX Client"
     },
     "linux": {
-      "desktopName": "NeX Client",
       "syncDesktopName": true,
       "target": [
         {
