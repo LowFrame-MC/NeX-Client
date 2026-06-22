@@ -643,6 +643,10 @@ select:focus {
   white-space: nowrap;
 }
 
+.mod-meta.external-source {
+  color: var(--muted);
+}
+
 .progress-card {
   padding: 10px;
   border-bottom: 1px solid var(--line);

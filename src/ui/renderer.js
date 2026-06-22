@@ -313,7 +313,20 @@ function updateProfile() {
     return;
   }
 
-  elements.profileAvatar.innerHTML = `<img src="https://crafatar.com/avatars/${encodeURIComponent(state.user.uuid)}?size=84&overlay" alt="">`;
+  const uuid = String(state.user.uuid || '').replaceAll('-', '');
+  const crafatarUrl = `https://crafatar.com/avatars/${encodeURIComponent(uuid)}?size=84&overlay&default=MHF_Steve`;
+  const fallbackUrl = `https://mc-heads.net/avatar/${encodeURIComponent(uuid)}/84`;
+  elements.profileAvatar.innerHTML = `<img src="${crafatarUrl}" alt="${escapeAttribute(state.user.username)}" referrerpolicy="no-referrer">`;
+  const avatarImage = elements.profileAvatar.querySelector('img');
+  avatarImage?.addEventListener('error', () => {
+    if (avatarImage.dataset.fallbackUsed) {
+      elements.profileAvatar.textContent = state.user.username?.slice(0, 1)?.toUpperCase() || '?';
+      return;
+    }
+
+    avatarImage.dataset.fallbackUsed = 'true';
+    avatarImage.src = fallbackUrl;
+  });
   elements.profileName.textContent = state.user.username;
   elements.profileMeta.textContent = state.user.userType.toUpperCase();
   elements.loginButton.classList.add('hidden');
@@ -618,7 +631,7 @@ function renderMods(mods) {
         <h3>${escapeHtml(mod.title)}</h3>
         <p>${escapeHtml(mod.description || 'No description provided.')}</p>
       </div>
-      <div class="mod-meta">↓ ${formatDownloads(mod.downloads)}</div>
+      ${renderDownloadMeta(mod)}
       <button class="btn primary" data-download-index="${index}">${mod.source === 'planetminecraft' ? 'Open' : 'Install'}</button>
     </article>
   `).join('');
@@ -675,7 +688,7 @@ function renderResourcePacks(resourcePacks) {
         <h3>${escapeHtml(pack.title)}</h3>
         <p>${escapeHtml(pack.description || 'No description provided.')}</p>
       </div>
-      <div class="mod-meta">↓ ${formatDownloads(pack.downloads)}</div>
+      ${renderDownloadMeta(pack)}
       <button class="btn primary" data-resource-pack-index="${index}">${pack.source === 'planetminecraft' ? 'Open' : 'Install'}</button>
     </article>
   `).join('');
@@ -683,6 +696,14 @@ function renderResourcePacks(resourcePacks) {
   $all('[data-resource-pack-index]').forEach((button) => {
     button.addEventListener('click', () => downloadResourcePack(resourcePacks[Number(button.dataset.resourcePackIndex)]));
   });
+}
+
+function renderDownloadMeta(item) {
+  if (item.source === 'planetminecraft') {
+    return '<div class="mod-meta external-source">External page</div>';
+  }
+
+  return `<div class="mod-meta">↓ ${formatDownloads(item.downloads)}</div>`;
 }
 
 async function downloadMod(mod) {
