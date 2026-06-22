@@ -115,7 +115,6 @@ install_node_dependencies() {
 
 prepare_output() {
   mkdir -p "$TARGET_DIR"
-  rm -rf "$PROJECT_ROOT/dist"
 }
 
 run_builds() {
