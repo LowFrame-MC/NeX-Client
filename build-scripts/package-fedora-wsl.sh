@@ -76,6 +76,7 @@ install_system_dependencies() {
   install_node_runtime
   install_dnf_package rpm-build
   install_dnf_package rpmdevtools
+  install_dnf_package libxcrypt-compat
   install_dnf_package ruby
   install_dnf_package ruby-devel
   install_dnf_package gcc
