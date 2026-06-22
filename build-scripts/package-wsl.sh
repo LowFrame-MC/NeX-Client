@@ -4,6 +4,7 @@ set -euo pipefail
 APP_NAME="NeX Client"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="/mnt/c/NeXClient-Dist"
+MODE="${1:-all}"
 
 log() {
   printf '[nex-build] %s\n' "$*"
@@ -38,6 +39,13 @@ install_wine() {
 
 install_system_dependencies() {
   log "Checking system packages"
+  if ! sudo -n true >/dev/null 2>&1; then
+    log "This script needs sudo to install Linux packaging tools in WSL."
+    log "Run it from an Ubuntu/WSL terminal so you can enter your password:"
+    log "  cd \"$PROJECT_ROOT\" && bash build-scripts/package-wsl.sh ${MODE}"
+    exit 1
+  fi
+
   sudo apt-get update
   install_apt_package curl
   install_apt_package ca-certificates
@@ -81,11 +89,13 @@ run_builds() {
   export CSC_IDENTITY_AUTO_DISCOVERY=false
   export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
 
-  log "Building Windows EXE installer"
-  npx electron-builder --win nsis --x64 --publish never
+  if [[ "$MODE" != "--deb-only" ]]; then
+    log "Building Windows EXE installer"
+    npx electron-builder --win nsis --x64 --publish never
 
-  log "Building Windows MSI installer"
-  npx electron-builder --win msi --x64 --publish never
+    log "Building Windows MSI installer"
+    npx electron-builder --win msi --x64 --publish never
+  fi
 
   log "Building Debian package"
   npx electron-builder --linux deb --x64 --publish never

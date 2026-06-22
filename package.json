@@ -15,6 +15,7 @@
     "build:win": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux --x64",
     "build:wsl": "bash build-scripts/package-wsl.sh",
+    "build:deb:wsl": "bash build-scripts/package-wsl.sh --deb-only",
     "dist": "electron-builder --win nsis msi --linux deb --x64",
     "lint:json": "node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('client-mod/config-injector.json','utf8')); console.log('JSON OK')\""
   },
